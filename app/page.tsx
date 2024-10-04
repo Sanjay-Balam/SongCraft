@@ -1,0 +1,123 @@
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Music, Share2, List } from "lucide-react";
+import { Signinbutton } from '@/components/Signinbutton';
+
+const LandingPage = () => {
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-900">
+      <header className="px-4 lg:px-6 h-14 flex items-center border-b border-gray-800">
+        <h1 className="text-lg font-bold text-purple-400">SongCraft</h1>
+        <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Button variant="ghost" className="text-gray-300 hover:text-purple-400">Create</Button>
+          <Button variant="ghost" className="text-gray-300 hover:text-purple-400">Share</Button>
+          <Button variant="ghost" className="text-gray-300 hover:text-purple-400">About</Button>
+          <Signinbutton/>
+        </nav>
+      </header>
+      <main className="flex-1 py-12 md:py-24 lg:py-32">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-purple-400">
+                Create, Share, and Discover Music
+              </h2>
+              <p className="mx-auto max-w-[700px] text-gray-300 md:text-xl">
+                Compose your own songs and share your favorite playlists with the world.
+                Unleash your creativity and connect with music lovers globally.
+              </p>
+            </div>
+            <div className="space-x-4">
+              <Button className="bg-purple-600 text-white hover:bg-purple-700">
+                Start Creating
+              </Button>
+              <Button
+                variant="outline"
+                className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-gray-900"
+              >
+                Explore Playlists
+              </Button>
+            </div>
+          </div>
+        </div>
+      </main>
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-800">
+        <div className="container px-4 md:px-6">
+          <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl text-center mb-8 text-purple-300">
+            Key Features
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-3">
+            <div className="flex flex-col items-center space-y-3 text-center">
+              <Music className="h-12 w-12 text-yellow-400" />
+              <h3 className="text-xl font-bold text-gray-100">Song Creation</h3>
+              <p className="text-gray-300">Compose and record your own unique songs.</p>
+            </div>
+            <div className="flex flex-col items-center space-y-3 text-center">
+              <List className="h-12 w-12 text-green-400" />
+              <h3 className="text-xl font-bold text-gray-100">Playlist Creation</h3>
+              <p className="text-gray-300">Create and organize your favorite song lists.</p>
+            </div>
+            <div className="flex flex-col items-center space-y-3 text-center">
+              <Share2 className="h-12 w-12 text-blue-400" />
+              <h3 className="text-xl font-bold text-gray-100">
+                Easy Sharing
+              </h3>
+              <p className="text-gray-300">Share your music and playlists with friends.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className="w-full py-12 md:py-24 lg:py-32">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl text-purple-400">
+                Ready to Make Your Mark in Music?
+              </h2>
+              <p className="mx-auto max-w-[600px] text-gray-300 md:text-xl">
+                Join SongCraft today and start creating, sharing, and discovering amazing music.
+              </p>
+            </div>
+            <div className="w-full max-w-sm space-y-2">
+              <form className="flex space-x-2">
+                <Input
+                  className="max-w-lg flex-1 bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500"
+                  placeholder="Enter your email"
+                  type="email"
+                />
+                <Button
+                  type="submit"
+                  className="bg-purple-600 text-white hover:bg-purple-700"
+                >
+                  Sign Up
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t border-gray-800">
+        <p className="text-xs text-gray-400">
+          © 2024 SongCraft. All rights reserved.
+        </p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+          <a
+            className="text-xs text-gray-400 hover:text-purple-400 transition-colors"
+            href="#"
+          >
+            Terms of Service
+          </a>
+          <a
+            className="text-xs text-gray-400 hover:text-purple-400 transition-colors"
+            href="#"
+          >
+            Privacy
+          </a>
+        </nav>
+      </footer>
+    </div>
+  );
+}
+
+export default LandingPage;
