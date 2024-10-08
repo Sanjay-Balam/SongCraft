@@ -1,7 +1,7 @@
 import {z} from "zod"
 import db from "@/lib/db"
 
-// @ts-ignore
+// @ts-expect-error
 import youtubesearchapi from "youtube-search-api";
 import { YT_REGEX } from "@/lib/utils";
 import { authOptions } from "@/lib/auth-options";

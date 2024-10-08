@@ -1,16 +1,16 @@
 "use client";
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronUp, ChevronDown, Share2, Play, Trash2, X } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
+import { ChevronUp, ChevronDown, Share2, Trash2, X } from "lucide-react";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Appbar } from "./Appbar";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
 import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
 import { YT_REGEX } from "../lib/utils";
-
 import YouTubePlayer from "youtube-player";
 import { useSession } from "next-auth/react";
 import type { Session } from "next-auth";
@@ -19,7 +19,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 
@@ -75,7 +74,7 @@ export default function StreamView({
       if (json.streams && Array.isArray(json.streams)) {
         setQueue(
           json.streams.length > 0
-            ? json.streams.sort((a: any, b: any) => b.upvotes - a.upvotes)
+            ? json.streams.sort((a: Video, b: Video) => b.upvotes - a.upvotes)
             : [],
         );
       } else {
@@ -89,7 +88,6 @@ export default function StreamView({
         return json.activeStream?.stream || null;
       });
 
-      // Set the creator's ID
       setCreatorUserId(json.creatorUserId);
       setIsCreator(json.isCreator);
     } catch (error) {
@@ -122,7 +120,7 @@ export default function StreamView({
     return () => {
       player.destroy();
     };
-  }, [currentVideo, videoPlayerRef]);
+  }, [currentVideo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +128,7 @@ export default function StreamView({
       toast.error("YouTube link cannot be empty");
       return;
     }
-    if (!inputLink.match(YT_REGEX)) {
+    if (!YT_REGEX.test(inputLink)) {
       toast.error("Invalid YouTube URL format");
       return;
     }
@@ -150,23 +148,19 @@ export default function StreamView({
       if (!res.ok) {
         throw new Error(data.message || "An error occurred");
       }
-      setQueue([...queue, data]);
+      setQueue((prevQueue) => [...prevQueue, data]);
       setInputLink("");
       toast.success("Song added to queue successfully");
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unexpected error occurred");
-      }
+      toast.error((error as Error).message || "An unexpected error occurred");
     } finally {
       setLoading(false);
     }
   };
 
   const handleVote = (id: string, isUpvote: boolean) => {
-    setQueue(
-      queue
+    setQueue((prevQueue) =>
+      prevQueue
         .map((video) =>
           video.id === id
             ? {
@@ -181,22 +175,25 @@ export default function StreamView({
 
     fetch(`/api/streams/${isUpvote ? "upvote" : "downvote"}`, {
       method: "POST",
-      body: JSON.stringify({
-        streamId: id,
-      }),
-    });
+      body: JSON.stringify({ streamId: id }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).catch((error) => console.error("Vote error:", error));
   };
 
   const playNext = async () => {
     if (queue.length > 0) {
       try {
         setPlayNextLoader(true);
-        const data = await fetch("/api/streams/next", {
-          method: "GET",
-        });
-        const json = await data.json();
-        setCurrentVideo(json.stream);
-        setQueue((q) => q.filter((x) => x.id !== json.stream?.id));
+        const response = await fetch("/api/streams/next");
+        const json = await response.json();
+        if (response.ok) {
+          setCurrentVideo(json.stream);
+          setQueue((prevQueue) => prevQueue.filter((x) => x.id !== json.stream?.id));
+        } else {
+          toast.error("Failed to play next song");
+        }
       } catch (e) {
         console.error("Error playing next song:", e);
       } finally {
@@ -212,7 +209,7 @@ export default function StreamView({
         toast.success("Link copied to clipboard!");
       },
       (err) => {
-        console.error("Could not copy text: ", err);
+        console.error("Could not copy text:", err);
         toast.error("Failed to copy link. Please try again.");
       },
     );
@@ -271,182 +268,100 @@ export default function StreamView({
                 {isCreator && (
                   <Button
                     onClick={() => setIsEmptyQueueDialogOpen(true)}
-                    className="bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                    className="bg-gray-700 hover:bg-gray-800 text-white transition-colors"
                   >
                     <Trash2 className="mr-2 h-4 w-4" /> Empty Queue
                   </Button>
                 )}
               </div>
             </div>
-            {queue.length === 0 ? (
-              <Card className="bg-gray-800 border-gray-700 shadow-lg">
-                <CardContent className="p-6">
-                  <p className="text-center py-8 text-gray-400">
-                    No videos in queue
-                  </p>
+
+            <div className="grid grid-cols-1 gap-4">
+              {queue.map((video) => (
+                <Card key={video.id} className="bg-gray-800 border border-gray-700">
+                  <CardContent className="flex flex-col">
+                    <LiteYouTubeEmbed id={video.extractedId} title={video.title} />
+                    <div className="flex justify-between mt-4">
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => handleVote(video.id, true)}
+                          disabled={video.haveUpvoted}
+                          className="bg-green-600 hover:bg-green-700 text-white transition-colors"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </Button>
+                        <span>{video.upvotes}</span>
+                        <Button
+                          onClick={() => handleVote(video.id, false)}
+                          disabled={!video.haveUpvoted}
+                          className="bg-red-600 hover:bg-red-700 text-white transition-colors"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {isCreator && (
+                        <Button
+                          onClick={() => removeSong(video.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <h2 className="text-3xl font-bold mb-4">Now Playing</h2>
+            {currentVideo ? (
+              <Card className="bg-gray-800 border border-gray-700">
+                <CardContent className="flex flex-col">
+                  <LiteYouTubeEmbed id={currentVideo.extractedId} title={currentVideo.title} />
+                  <h3 className="mt-2 text-lg font-semibold">{currentVideo.title}</h3>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {queue.map((video) => (
-                  <Card
-                    key={video.id}
-                    className="bg-gray-800 border-gray-700 shadow-lg hover:shadow-xl transition-shadow"
-                  >
-                    <CardContent className="p-4 flex items-center space-x-4">
-                      <img
-                        src={video.smallImg}
-                        alt={`Thumbnail for ${video.title}`}
-                        className="w-32 h-24 object-cover rounded-md"
-                      />
-                      <div className="flex-grow">
-                        <h3 className="font-semibold text-white text-lg mb-2">
-                          {video.title}
-                        </h3>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleVote(video.id, !video.haveUpvoted)
-                            }
-                            className="flex items-center space-x-1 bg-gray-700 text-white border-gray-600 hover:bg-gray-600 transition-colors"
-                          >
-                            {video.haveUpvoted ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronUp className="h-4 w-4" />
-                            )}
-                            <span>{video.upvotes}</span>
-                          </Button>
-                          {isCreator && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeSong(video.id)}
-                              className="bg-gray-700 hover:bg-gray-600 text-white transition-colors"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <div className="text-gray-400">No video currently playing</div>
             )}
-          </div>
-          <div className="space-y-6">
-            <Card className="bg-gray-800 border-gray-700 shadow-lg">
-              <CardContent className="p-6 space-y-4">
-                <h2 className="text-2xl font-bold text-white">Add a song</h2>
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <Input
-                    type="text"
-                    placeholder="Paste YouTube link here"
-                    value={inputLink}
-                    onChange={(e) => setInputLink(e.target.value)}
-                    className="bg-gray-700 text-white border-gray-600 placeholder-gray-400"
-                  />
-                  <Button
-                    disabled={loading}
-                    type="submit"
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-                  >
-                    {loading ? "Loading..." : "Add to Queue"}
-                  </Button>
-                </form>
-                {inputLink && inputLink.match(YT_REGEX) && !loading && (
-                  <div className="mt-4">
-                    <LiteYouTubeEmbed title="" id={inputLink.split("?v=")[1]} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card className="bg-gray-800 border-gray-700 shadow-lg">
-              <CardContent className="p-6 space-y-4">
-                <h2 className="text-2xl font-bold text-white">Now Playing</h2>
-                {currentVideo ? (
-                  <div>
-                    {playVideo ? (
-                      <div
-                        ref={videoPlayerRef}
-                        className="w-full aspect-video"
-                      />
-                    ) : (
-                      <>
-                        <img
-                          src={currentVideo.bigImg}
-                          className="w-full aspect-video object-cover rounded-md"
-                          alt={currentVideo.title}
-                        />
-                        <p className="mt-2 text-center font-semibold text-white">
-                          {currentVideo.title}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-center py-8 text-gray-400">
-                    No video playing
-                  </p>
-                )}
-                {playVideo && (
-                  <Button
-                    disabled={playNextLoader}
-                    onClick={playNext}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-                  >
-                    <Play className="mr-2 h-4 w-4" />{" "}
-                    {playNextLoader ? "Loading..." : "Play next"}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
-      <Dialog
-        open={isEmptyQueueDialogOpen}
-        onOpenChange={setIsEmptyQueueDialogOpen}
-      >
+
+      {/* Dialog for emptying queue confirmation */}
+      <Dialog open={isEmptyQueueDialogOpen} onOpenChange={setIsEmptyQueueDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Empty Queue</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to empty the queue? This will remove all
-              songs from the queue. This action cannot be undone.
-            </DialogDescription>
+            <DialogTitle>Confirm Empty Queue</DialogTitle>
           </DialogHeader>
+          <p>Are you sure you want to empty the entire queue?</p>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEmptyQueueDialogOpen(false)}
-            >
+            <Button variant="secondary" onClick={() => setIsEmptyQueueDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={emptyQueue}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
+            <Button className="bg-red-500" onClick={emptyQueue}>
               Empty Queue
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2">
+        <form onSubmit={handleSubmit} className="flex space-x-2">
+          <Input
+            value={inputLink}
+            onChange={(e) => setInputLink(e.target.value)}
+            placeholder="Paste YouTube link here..."
+            className="flex-1"
+            required
+          />
+          <Button type="submit" className="bg-blue-500 hover:bg-blue-600" disabled={loading}>
+            {loading ? "Loading..." : "Add Song"}
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,25 +1,16 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package.json and pnpm-lock.yaml
 COPY package.json .
-COPY pnpm-lock.yaml .
 
-# Install pnpm globally
-RUN npm install -g pnpm
+RUN npm install pnpm -g
 
-# Install dependencies
-RUN pnpm install
-
-# Copy the rest of your application code
+RUN pnpm install 
 COPY . .
+RUN DATABASE_URL=$DATABASE_URL npx prisma generate
+RUN DATABASE_URL=$DATABASE_URL pnpm run build
 
-# Build the application
-RUN npm run build
+EXPOSE 3001
 
-# Expose the application on port 3000
-EXPOSE 3000
-
-# Start the application
 CMD ["pnpm", "run", "start"]

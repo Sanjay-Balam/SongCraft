@@ -5,9 +5,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {z} from "zod"
 
-const RemoveSchema = z.object({
-    StreamId : z.string(),
-});
 
 export async function DELETE(req:NextRequest){
     const session = await getServerSession(authOptions);
