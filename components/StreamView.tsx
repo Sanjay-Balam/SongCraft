@@ -91,6 +91,7 @@ export default function StreamView({
       // Set the creator's ID
       setCreatorUserId(json.creatorUserId);
       setIsCreator(json.isCreator);
+      console.log(creatorUserId);
     } catch (error) {
       console.error("Error refreshing streams:", error);
       setQueue([]);

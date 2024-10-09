@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Music, Share2, List } from "lucide-react";
 import { Signinbutton } from '@/components/Signinbutton';
+import { StartCreating } from '@/components/StartCreating';
 
 const LandingPage = () => {
   return (
@@ -28,10 +29,8 @@ const LandingPage = () => {
                 Unleash your creativity and connect with music lovers globally.
               </p>
             </div>
-            <div className="space-x-4">
-              <Button className="bg-purple-600 text-white hover:bg-purple-700">
-                Start Creating
-              </Button>
+            <div className="flex space-x-4">
+              <StartCreating/>
               <Button
                 variant="outline"
                 className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-gray-900"
